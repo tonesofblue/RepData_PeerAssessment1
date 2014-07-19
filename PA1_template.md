@@ -9,12 +9,12 @@ This assignment makes use of data from a personal activity monitoring device. Th
 
 Lattice graphic library is chosen for plotting. For apply operations plyr library is used. Both libraries are loaded at first. Data for the assignment is in the file 'activity.csv' which is contained in a zip container 'activity.zip.' The 'as.is = TRUE' option prevents the formation of factor variables and keeps the type of 'date' variable as character.
 
-```{r}
+
+```r
 library(lattice)
 library(plyr)
 
 data <- read.csv(con <- unz(normalizePath("activity.zip"), "activity.csv"), as.is = TRUE)
-
 ```
 
 ####  2. Process/ transform the data:
@@ -26,7 +26,8 @@ No process or transformation is required at this stage. The information in the f
 
 For this part of the assignment, the missing values in the dataset can be ignored. The dataset has three columns: 'steps', 'date' and 'interval'. Only the column 'steps' has missing values. A logical vector 'fltr' is calculated to filter out missing values.
 
-```{r}
+
+```r
 n <- nrow(data)
 natable <- xtabs(~ col + isn,
       data = data.frame(col = c(rep("steps", n), rep("date", n), rep("interval", n)),
@@ -35,31 +36,40 @@ natable <- xtabs(~ col + isn,
 
 fltr <- !is.na(data$steps)
 print(natable)
+```
 
+```
+##           isn
+## col        FALSE  TRUE
+##   date     17568     0
+##   interval 17568     0
+##   steps    15264  2304
 ```
 
 
 #### 1. Histogram of the total number of steps taken each day:
 
-```{r}
+
+```r
 steps <- ddply(data[fltr,], c("date"), summarize, total = sum(steps))
 
 histogram(steps$total, breaks = 20, col = "red", type = "count",
      main = "Histogram of the total number of steps taken each day",
      xlab = "Total number of steps per day",
      ylab = "Frequency")
-
 ```
 
+![plot of chunk unnamed-chunk-3](figure/unnamed-chunk-3.png) 
+
 #### 2. Mean and median total number of steps taken per day:
-```{r}
+
+```r
 mean =  mean(steps$total)
 median = median(steps$total)
 std = sd(steps$total)
-
 ```
 
-Mean total number of steps taken per day is **`r formatC(mean,digits = 2, format = "f")`** steps. Median total number of steps taken per day is **`r median`** steps.
+Mean total number of steps taken per day is **10766.19** steps. Median total number of steps taken per day is **10765** steps.
 
 ### What is the average daily activity pattern?
 
@@ -67,7 +77,8 @@ Mean total number of steps taken per day is **`r formatC(mean,digits = 2, format
 
 Interval based statistics are calculated usind ddply function of plyr package. A function, int2timestr, is implemented to convert integer time interval to time string, in HH:MM format. Customizations for x axis ticks and labels of lattice graphics system are performed to obtain final plot.
 
-```{r}
+
+```r
 stats <- ddply(data[fltr,], c("interval"), summarize, mean = mean(steps), sd = sd(steps), median = median(steps))
 
 int2timestr <- function(x) {
@@ -94,15 +105,17 @@ xyplot(mean ~ time, data = stats,
            panel.xyplot(x, y, ...)
            panel.abline(v = xaxisticks, col = "darkgrey", lty = "dashed")
        })
-
 ```
+
+![plot of chunk unnamed-chunk-5](figure/unnamed-chunk-5.png) 
 #### 2. Interval containing the maximum number of steps:
 
-```{r}
+
+```r
 maxintervals <- stats$interval[which(stats$mean == max(stats$mean))]
 ismulti <- length(maxintervals) > 1
 ```
-The 5-minute interval`r ifelse(ismulti, "s", "")`, on average across all the days in the dataset, contain`r ifelse(ismulti, "", "s")` the maximum number of steps `r ifelse(ismulti, "are", "is")` **`r ifelse(ismulti, paste0(int2timestr(maxintervals), collapse = ", "), int2timestr(maxintervals))`**.
+The 5-minute interval, on average across all the days in the dataset, contains the maximum number of steps is **08:35**.
 
 ### Imputing missing values
 
@@ -110,8 +123,17 @@ The 5-minute interval`r ifelse(ismulti, "s", "")`, on average across all the day
 
 Missing values table has been previously obtained:
 
-```{r}
+
+```r
 print(natable)
+```
+
+```
+##           isn
+## col        FALSE  TRUE
+##   date     17568     0
+##   interval 17568     0
+##   steps    15264  2304
 ```
 
 Only 'steps' column has missing entries. There are 2304 missing values. **2304** rows (observations) have missing values out of 17568 rows.
@@ -122,43 +144,49 @@ Average values of steps over 5-minutes intervals are used to fill in missing val
 
 #### 3. New dataset that is equal to the original dataset but with the missing data filled in:
 
-```{r}
+
+```r
 data2 <- data
 data2$steps[!fltr] <- stats$mean[match(data2$interval[!fltr], stats$interval)]
-
 ```
 
 
 #### 4. Histogram, mean and median of the total number of steps taken each day:
 
-```{r}
+
+```r
 steps2 <- ddply(data2, c("date"), summarize, total = sum(steps))
 
 histogram(steps2$total, breaks = 20, col = "red", type = "count",
      main = "Histogram of the total number of steps taken each day",
      xlab = "Total number of steps per day",
      ylab = "Frequency")
+```
 
+![plot of chunk unnamed-chunk-9](figure/unnamed-chunk-9.png) 
+
+```r
 mean2 =  mean(steps2$total)
 median2 = median(steps2$total)
 std2 = sd(steps2$total)
 ```
 
-Mean total number of steps taken per day is **`r formatC(mean2, digits = 2, format = "f")`** steps. Median total number of steps taken per day is **`r formatC(median2, digits = 2, format = "f")`** steps. These values don't differ from the estimates from the first part of the assignment. However, in the first part, standart deviation total number of steps, **`r formatC(std, digits = 2, format = "f")`**, is decreased to **`r formatC(std2, digits = 2, format = "f")`**.
+Mean total number of steps taken per day is **10766.19** steps. Median total number of steps taken per day is **10766.19** steps. These values don't differ from the estimates from the first part of the assignment. However, in the first part, standart deviation total number of steps, **4269.18**, is decreased to **3974.39**.
 
 ### Are there differences in activity patterns between weekdays and weekends?
 
 #### 1. Create a new factor variable in the dataset:
 
-```{r}
+
+```r
 data2$day <- ifelse(strftime(data2$date, "%A") %in% c("Saturday", "Sunday"), "Weekend", "Weekday")
 data2$day <- factor(data2$day)
-
 ```
 
 #### 2.  Time series plot:
 
-```{r}
+
+```r
 stats2 <- ddply(data2, c("day", "interval"), summarize, mean = mean(steps), sd = sd(steps), median = median(steps))
 stats2$time <- as.POSIXct(strptime(int2timestr(stats2$interval),"%H:%M"))
 
@@ -171,7 +199,8 @@ xyplot(mean ~ time | day, data = stats2, layout = c(1,2),
            panel.abline(v = xaxisticks, col = "darkgrey", lty = "dashed")
            panel.grid(h=-1, v = 0)
        })
-
 ```
+
+![plot of chunk unnamed-chunk-11](figure/unnamed-chunk-11.png) 
 
 Observations on the plot show that average number of steps on weekday mornings are greater than average number of steps on weekend mornings. However, average number of steps on weekday afternoons are less than average number of steps on weekend afternoons.
